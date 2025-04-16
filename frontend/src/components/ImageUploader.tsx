@@ -6,60 +6,72 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Image as ImageIcon, X, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { uploadImage } from "@/utils/apiService";
 
 interface ImageUploaderProps {
-  onAddImage: (imageData: string, caption: string) => void;
+  onAddImage: (imagePath: string, caption: string) => void;
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({ onAddImage }) => {
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setIsUploading(true);
       const file = e.target.files[0];
       
       // Check if file size is too large
       const maxFileSizeMB = 5;
       if (file.size > maxFileSizeMB * 1024 * 1024) {
         toast.error(`Image too large. Please select an image under ${maxFileSizeMB}MB.`);
-        setIsUploading(false);
         return;
       }
 
-      const reader = new FileReader();
+      setImageFile(file);
       
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setImagePreview(base64String);
-        setIsUploading(false);
-      };
-      
-      reader.onerror = () => {
-        toast.error("Error reading file. Please try another image.");
-        setIsUploading(false);
-      };
-      
-      reader.readAsDataURL(file);
+      // Create a preview for the UI
+      const objectUrl = URL.createObjectURL(file);
+      setImagePreview(objectUrl);
     }
   };
 
-  const handleSubmit = () => {
-    if (imagePreview) {
+  const handleSubmit = async () => {
+    if (imageFile) {
       if (!caption.trim()) {
         toast.warning("Please add a caption for the image");
         return;
       }
-      onAddImage(imagePreview, caption);
-      setImagePreview(null);
-      setCaption("");
-      toast.success("Image added successfully");
+      
+      setIsUploading(true);
+      
+      try {
+        // Upload the image to the server and get the path
+        const result = await uploadImage(imageFile);
+        
+        // Pass the image path to parent component
+        onAddImage(result.path, caption);
+        
+        // Reset form
+        setImageFile(null);
+        setImagePreview(null);
+        setCaption("");
+        toast.success("Image added successfully");
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        toast.error("Failed to upload image. Please try again.");
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
   const handleCancel = () => {
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setImageFile(null);
     setImagePreview(null);
     setCaption("");
   };
@@ -123,7 +135,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onAddImage }) => {
           onClick={handleSubmit}
           disabled={!imagePreview || isUploading}
         >
-          {isUploading ? "Processing..." : "Add Image"}
+          {isUploading ? "Uploading..." : "Add Image"}
         </Button>
       </div>
     </div>

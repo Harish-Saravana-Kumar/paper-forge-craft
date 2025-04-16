@@ -1,4 +1,3 @@
-
 import { Paper } from "./schemaHelpers";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +22,7 @@ const transformPaperForBackend = (paperData: Paper) => {
       heading: s.heading,
       content: processContent(s.content),
       images: (s.images || []).map(img => ({
-        data: img.data,
+        path: img.data,
         caption: img.caption
       })),
       tables: (s.tables || []).map(table => table.data),
@@ -32,7 +31,7 @@ const transformPaperForBackend = (paperData: Paper) => {
         heading: sub.heading,
         content: processContent(sub.content),
         images: sub.images.map(img => ({
-          data: img.data,
+          path: img.data,
           caption: img.caption
         })),
         tables: sub.tables.map(table => table.data),
@@ -110,6 +109,30 @@ export const getUserProfile = async () => {
   }
 };
 
+// Image upload function
+export const uploadImage = async (file: File): Promise<{ filename: string; path: string }> => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await fetch(`${API_BASE_URL}/upload-image`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Image upload failed:", errorText);
+      throw new Error(`Failed to upload image: ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    throw error;
+  }
+};
+
 // Paper generation functions
 export const generatePaper = async (paperData: Paper): Promise<Blob | null> => {
   try {
@@ -176,5 +199,33 @@ export const downloadPdf = (blob: Blob, filename: string = "ieee_paper.docx") =>
   } catch (error) {
     console.error("Error downloading DOCX:", error);
     toast.error("Failed to download the paper");
+  }
+};
+
+// Plagiarism check function
+export const checkPlagiarism = async (docxFile: Blob): Promise<{
+  score: number;
+  suggestions: string[];
+  status: 'poor' | 'fair' | 'good' | 'excellent';
+}> => {
+  try {
+    const formData = new FormData();
+    formData.append('file', new File([docxFile], 'paper.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));
+    
+    const response = await fetch(`${API_BASE_URL}/check-plagiarism`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Plagiarism check failed:", errorText);
+      throw new Error(`Failed to check plagiarism: ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error checking plagiarism:", error);
+    throw error;
   }
 };

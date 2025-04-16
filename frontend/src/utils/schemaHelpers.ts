@@ -8,7 +8,7 @@ export interface Author {
 
 export interface Image {
   id: string;
-  data: string; // Base64 encoded image
+  data: string; // This will now be a file path instead of base64
   caption: string;
 }
 
