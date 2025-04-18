@@ -20,23 +20,25 @@ const transformPaperForBackend = (paperData: Paper) => {
     keywords: paperData.keywords,
     sections: paperData.sections.map(s => ({
       heading: s.heading,
-      content: processContent(s.content),
+      content: processContent(s.content || ''),
       images: (s.images || []).map(img => ({
-        path: img.data,
+        filename: img.filename,
+        path: img.path,
         caption: img.caption
       })),
       tables: (s.tables || []).map(table => table.data),
       formulas: (s.formulas || []).map(f => f.latex),
-      subsections: s.subsections.map(sub => ({
+      subsections: s.subsections?.map(sub => ({
         heading: sub.heading,
         content: processContent(sub.content),
-        images: sub.images.map(img => ({
-          path: img.data,
+        images: (sub.images || []).map(img => ({
+          filename: img.filename,
+          path: img.path,
           caption: img.caption
         })),
-        tables: sub.tables.map(table => table.data),
-        formulas: sub.formulas.map(f => f.latex)
-      }))
+        tables: (sub.tables || []).map(table => table.data),
+        formulas: (sub.formulas || []).map(f => f.latex)
+      })) || []
     })),
     references: paperData.references || [],
     appendix: paperData.appendix || []

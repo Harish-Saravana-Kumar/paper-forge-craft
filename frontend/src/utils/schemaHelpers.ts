@@ -1,4 +1,3 @@
-
 // Interfaces for the paper structure
 export interface Author {
   name: string;
@@ -7,41 +6,35 @@ export interface Author {
 }
 
 export interface Image {
-  id: string;
-  data: string; // This will now be a file path instead of base64
-  caption: string;
+  filename: string;
+  path: string;
+  caption?: string;
 }
 
 export interface Table {
-  id: string;
-  rows: number;
-  columns: number;
-  caption: string;
-  data: string[][]; // 2D array of cell values
+  data: string[][];
+  caption?: string;
 }
 
 export interface Formula {
-  id: string;
   latex: string;
 }
 
 export interface Subsection {
-  id: string;
   heading: string;
   content: string;
-  images: Image[];
-  tables: Table[];
-  formulas: Formula[];
+  images?: Image[];
+  formulas?: Formula[];
+  tables?: Table[];
 }
 
 export interface Section {
-  id: string;
   heading: string;
-  content: string;
-  subsections: Subsection[];
+  content?: string;
   images?: Image[];
-  tables?: Table[];
   formulas?: Formula[];
+  tables?: Table[];
+  subsections?: Subsection[];
 }
 
 export interface Paper {
@@ -50,8 +43,8 @@ export interface Paper {
   abstract: string;
   keywords: string[];
   sections: Section[];
-  references: string[];
-  appendix: string[];
+  references?: string[];
+  appendix?: string[];
 }
 
 // Generate empty paper schema with basic required sections
@@ -154,8 +147,8 @@ export const addImage = (paper: Paper, sectionId: string, subsectionId: string |
           return {
             ...section,
             images: [...(section.images || []), {
-              id: crypto.randomUUID(),
-              data: imageData,
+              filename: '',
+              path: imageData,
               caption,
             }],
           };
@@ -178,8 +171,8 @@ export const addImage = (paper: Paper, sectionId: string, subsectionId: string |
                 images: [
                   ...subsection.images,
                   {
-                    id: crypto.randomUUID(),
-                    data: imageData,
+                    filename: '',
+                    path: imageData,
                     caption,
                   },
                 ],
@@ -216,11 +209,8 @@ export const addTable = (
           return {
             ...section,
             tables: [...(section.tables || []), {
-              id: crypto.randomUUID(),
-              rows,
-              columns,
-              caption,
               data: emptyTable,
+              caption,
             }],
           };
         }
@@ -242,11 +232,8 @@ export const addTable = (
                 tables: [
                   ...subsection.tables,
                   {
-                    id: crypto.randomUUID(),
-                    rows,
-                    columns,
-                    caption,
                     data: emptyTable,
+                    caption,
                   },
                 ],
               };
@@ -270,7 +257,6 @@ export const addFormula = (paper: Paper, sectionId: string, subsectionId: string
           return {
             ...section,
             formulas: [...(section.formulas || []), {
-              id: crypto.randomUUID(),
               latex,
             }],
           };
@@ -293,7 +279,6 @@ export const addFormula = (paper: Paper, sectionId: string, subsectionId: string
                 formulas: [
                   ...subsection.formulas,
                   {
-                    id: crypto.randomUUID(),
                     latex,
                   },
                 ],
@@ -365,17 +350,17 @@ export const removeMedia = (
           if (mediaType === "image") {
             return {
               ...section,
-              images: (section.images || []).filter((img) => img.id !== mediaId),
+              images: (section.images || []).filter((img) => img.filename !== mediaId),
             };
           } else if (mediaType === "table") {
             return {
               ...section,
-              tables: (section.tables || []).filter((table) => table.id !== mediaId),
+              tables: (section.tables || []).filter((table) => table.data !== mediaId),
             };
           } else if (mediaType === "formula") {
             return {
               ...section,
-              formulas: (section.formulas || []).filter((formula) => formula.id !== mediaId),
+              formulas: (section.formulas || []).filter((formula) => formula.latex !== mediaId),
             };
           }
         }
@@ -395,17 +380,17 @@ export const removeMedia = (
               if (mediaType === "image") {
                 return {
                   ...subsection,
-                  images: subsection.images.filter((img) => img.id !== mediaId),
+                  images: subsection.images.filter((img) => img.filename !== mediaId),
                 };
               } else if (mediaType === "table") {
                 return {
                   ...subsection,
-                  tables: subsection.tables.filter((table) => table.id !== mediaId),
+                  tables: subsection.tables.filter((table) => table.data !== mediaId),
                 };
               } else if (mediaType === "formula") {
                 return {
                   ...subsection,
-                  formulas: subsection.formulas.filter((formula) => formula.id !== mediaId),
+                  formulas: subsection.formulas.filter((formula) => formula.latex !== mediaId),
                 };
               }
             }
